@@ -1,0 +1,228 @@
+{
+  "name": "Sistema de Notificaciones (Django)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notificacion-reserva",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c5020486-b465-4f09-89d7-4265530c28e9",
+      "name": "Webhook",
+      "webhookId": "c0587b8f-3a96-48cf-aec8-bd547026195f"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.estado }}",
+                    "rightValue": "CONFIRMADA",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "3b057056-9b8e-47c7-9d5e-b57d40e738d6"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e8723331-baa8-4e22-8a24-2c72ac07323c",
+                    "leftValue": "={{ $json.body.estado }}",
+                    "rightValue": "CANCELADA",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b8c0363f-294c-4905-a498-98c00bedb07d",
+                    "leftValue": "={{ $json.body.estado }}",
+                    "rightValue": "RECIBIDA",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ce02f3ea-1ef3-4498-8c4b-d50391d22230",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "fromEmail": "Christopher.astorga.g@gmail.com",
+        "toEmail": "={{ $json[\"body\"][\"cliente_email\"] }}",
+        "subject": "=Reserva Confirmada: {{ $json.body.sala }}",
+        "html": "=<div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);\">\n  \n  <!-- CABECERA VERDE -->\n  <div style=\"background-color: #10B981; padding: 24px; text-align: center;\">\n    <h2 style=\"color: white; margin: 0; font-size: 24px; letter-spacing: 0.5px;\">¡Reserva Confirmada! 🎉</h2>\n  </div>\n  \n  <div style=\"padding: 30px; background-color: #ffffff;\">\n    <p style=\"font-size: 16px; margin-bottom: 20px;\">Hola <strong>{{ $json.body.cliente_nombre }}</strong>,</p>\n    \n    <p style=\"color: #4B5563; line-height: 1.6;\">Tu solicitud ha sido procesada y aprobada exitosamente por nuestro equipo.</p>\n    \n    <!-- CAJA DE DETALLES -->\n    <div style=\"background-color: #ECFDF5; border-left: 4px solid #10B981; padding: 20px; border-radius: 4px; margin: 25px 0;\">\n      <p style=\"margin: 8px 0; font-size: 15px; color: #064E3B;\"><strong>🔖 Ticket:</strong> #{{ $json.body.id_reserva }}</p>\n      <hr style=\"border: 0; border-top: 1px solid #A7F3D0; margin: 10px 0;\">\n      <p style=\"margin: 8px 0; font-size: 15px;\"><strong>🏛️ Sala:</strong> {{ $json.body.sala }}</p>\n      <p style=\"margin: 8px 0; font-size: 15px;\"><strong>📅 Inicio:</strong> {{ $json.body.fecha_inicio }}</p>\n      <p style=\"margin: 8px 0; font-size: 15px;\"><strong>🏁 Fin:</strong> {{ $json.body.fecha_fin }}</p>\n      <p style=\"margin: 8px 0; font-size: 15px;\"><strong>✅ Estado:</strong> <span style=\"color: #059669; font-weight: bold;\">CONFIRMADA</span></p>\n    </div>\n\n    <p style=\"font-size: 14px; color: #6B7280; text-align: center;\">¡Te esperamos! Si necesitas modificarla, responde a este correo indicando tu número de ticket.</p>\n  </div>\n  \n  <!-- FOOTER -->\n  <div style=\"background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;\">\n    <p style=\"margin: 0; font-size: 12px; color: #9CA3AF;\">Sistema Automático de Reservas • Enviado vía n8n</p>\n  </div>\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        -96
+      ],
+      "id": "1bb25e4f-9963-4a32-b7bd-f3744bf1274f",
+      "name": "Send email",
+      "webhookId": "99dbc874-3aa0-445c-9cd2-696bd8e13b62",
+      "credentials": {
+        "smtp": {
+          "id": "l6qFpcmZy72Rfty4",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "Christopher.astorga.g@gmail.com",
+        "toEmail": "={{ $json[\"body\"][\"cliente_email\"] }}",
+        "subject": "=Reserva Cancelada: {{ $json.body.sala }}",
+        "html": "=<div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);\">\n  \n  <!-- CABECERA ROJA -->\n  <div style=\"background-color: #EF4444; padding: 24px; text-align: center;\">\n    <h2 style=\"color: white; margin: 0; font-size: 24px; letter-spacing: 0.5px;\">Reserva Cancelada 🚫</h2>\n  </div>\n  \n  <div style=\"padding: 30px; background-color: #ffffff;\">\n    <p style=\"font-size: 16px; margin-bottom: 20px;\">Hola <strong>{{ $json.body.cliente_nombre }}</strong>,</p>\n    \n    <p style=\"color: #4B5563; line-height: 1.6;\">Lamentamos informarte que tu reserva ha sido cancelada.</p>\n    \n    <!-- CAJA DE DETALLES -->\n    <div style=\"background-color: #FEF2F2; border-left: 4px solid #EF4444; padding: 20px; border-radius: 4px; margin: 25px 0;\">\n      <p style=\"margin: 8px 0; font-size: 15px; color: #7F1D1D;\"><strong>🔖 Ticket:</strong> #{{ $json.body.id_reserva }}</p>\n      <hr style=\"border: 0; border-top: 1px solid #FECACA; margin: 10px 0;\">\n      <p style=\"margin: 8px 0; font-size: 15px;\"><strong>🏛️ Sala:</strong> {{ $json.body.sala }}</p>\n      <p style=\"margin: 8px 0; font-size: 15px;\"><strong>📅 Fecha:</strong> {{ $json.body.fecha_inicio }}</p>\n      <p style=\"margin: 8px 0; font-size: 15px;\"><strong>❌ Estado:</strong> <span style=\"color: #DC2626; font-weight: bold;\">CANCELADA</span></p>\n    </div>\n\n    <p style=\"font-size: 14px; color: #6B7280; text-align: center;\">Si crees que esto es un error o deseas reagendar, por favor contáctanos.</p>\n    \n    <div style=\"text-align: center; margin-top: 30px;\">\n      <!-- Enlace dinámico a WhatsApp para soporte -->\n      <a href=\"https://wa.me/\" style=\"background-color: #25D366; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px;\">Contactar por WhatsApp</a>\n    </div>\n  </div>\n  \n  <!-- FOOTER -->\n  <div style=\"background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;\">\n    <p style=\"margin: 0; font-size: 12px; color: #9CA3AF;\">Sistema Automático de Reservas • Enviado vía n8n</p>\n  </div>\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        48
+      ],
+      "id": "d4352818-df69-4d15-96f2-e3e877b3a52c",
+      "name": "Send email1",
+      "webhookId": "99dbc874-3aa0-445c-9cd2-696bd8e13b62",
+      "credentials": {
+        "smtp": {
+          "id": "l6qFpcmZy72Rfty4",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "Christopher.astorga.g@gmail.com",
+        "toEmail": "={{ $json[\"body\"][\"cliente_email\"] }}",
+        "subject": "=Reserva en proceso: {{ $json.body.sala }}",
+        "html": "=<div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);\">\n  \n  <!-- CABECERA AZUL -->\n  <div style=\"background-color: #3B82F6; padding: 24px; text-align: center;\">\n    <h2 style=\"color: white; margin: 0; font-size: 24px; letter-spacing: 0.5px;\">Solicitud Recibida 📩</h2>\n  </div>\n  \n  <div style=\"padding: 30px; background-color: #ffffff;\">\n    <p style=\"font-size: 16px; margin-bottom: 20px;\">Hola <strong>{{ $json.body.cliente_nombre }}</strong>,</p>\n    \n    <p style=\"color: #4B5563; line-height: 1.6;\">Tu solicitud de reserva ha ingresado correctamente a nuestro sistema.</p>\n    <p style=\"color: #4B5563;\">Un ejecutivo revisará la disponibilidad y te enviará la confirmación definitiva a la brevedad.</p>\n    \n    <!-- CAJA DE DETALLES -->\n    <div style=\"background-color: #EFF6FF; border-left: 4px solid #3B82F6; padding: 20px; border-radius: 4px; margin: 25px 0;\">\n      <p style=\"margin: 8px 0; font-size: 15px; color: #1E3A8A;\"><strong>🔖 Ticket:</strong> #{{ $json.body.id_reserva }}</p>\n      <hr style=\"border: 0; border-top: 1px solid #BFDBFE; margin: 10px 0;\">\n      <p style=\"margin: 8px 0; font-size: 15px;\"><strong>🏛️ Sala:</strong> {{ $json.body.sala }}</p>\n      <p style=\"margin: 8px 0; font-size: 15px;\"><strong>📅 Fecha:</strong> {{ $json.body.fecha_inicio }}</p>\n      <p style=\"margin: 8px 0; font-size: 15px;\"><strong>⏳ Estado:</strong> <span style=\"color: #2563EB; font-weight: bold;\">EN REVISIÓN</span></p>\n    </div>\n\n    <div style=\"text-align: center; margin-top: 30px;\">\n      <p style=\"font-size: 13px; color: #9CA3AF;\">No necesitas hacer nada más por ahora. Te avisaremos pronto.</p>\n    </div>\n  </div>\n  \n  <!-- FOOTER -->\n  <div style=\"background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;\">\n    <p style=\"margin: 0; font-size: 12px; color: #9CA3AF;\">Sistema Automático de Reservas • Enviado vía n8n</p>\n  </div>\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        224
+      ],
+      "id": "1c835928-7c83-4b73-8e26-523ec6301097",
+      "name": "Send email2",
+      "webhookId": "99dbc874-3aa0-445c-9cd2-696bd8e13b62",
+      "credentials": {
+        "smtp": {
+          "id": "l6qFpcmZy72Rfty4",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send email1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send email2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d4f6a224-9f87-4a10-972f-043765e70c92",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3c2207110789e9c8155b8a5143a1b985b6596dbeebdcc067cf809b116c11bc56"
+  },
+  "id": "xjUwrueMlY01u1Fg",
+  "tags": []
+}

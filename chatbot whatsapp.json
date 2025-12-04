@@ -1,0 +1,255 @@
+{
+  "name": "chatbot whatsapp",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=Eres un asistente de reservas de coworking conectado a una base de datos en tiempo real.\n\nTU REGLA #1: No inventes información. TU REGLA #2: Tienes una herramienta llamada 'consultar_salas'. DEBES EJECUTARLA inmediatamente cuando el usuario pregunte por disponibilidad o información de salas.\n\nUna vez que recibas el JSON de la herramienta, responde al usuario de forma amable resumiendo la información.\"\n\nREGLA DE CONVERSACIÓN CLAVE: NO pidas más de UN dato por turno. Si necesitas el nombre, pídelo. Una vez que lo tengas, pide el email.\n\nCONTEXTO TEMPORAL:\nHoy es: {{ $now.format('yyyy-MM-dd HH:mm') }}\nZona horaria: Chile.\n\nINSTRUCCIONES DE TIEMPO:\n- Usa la fecha de \"Hoy\" para calcular fechas relativas.\n- Si el usuario dice \"mañana\", suma 1 día a la fecha de hoy.\n- Si el usuario dice \"el próximo lunes\", calcula la fecha exacta.\n- SIEMPRE que llames a la herramienta de reserva, usa el formato completo: YYYY-MM-DD HH:mm:ss\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "7600b4ba-13a3-4ad2-8b32-c3b65ace583b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        496,
+        208
+      ],
+      "id": "755df7eb-e756-451c-a27e-b59ba223ba7c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dWwHOIy6m9N28hrG",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionKey": ""
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        208
+      ],
+      "id": "2d4d7233-d0c2-4299-bbac-c5dea4756354",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "OBLIGATORIO. Usa esta herramienta SIEMPRE que el usuario pregunte qué salas hay, disponibilidad, horarios o capacidad. Retorna la lista real de la base de datos.",
+        "url": "http://host.docker.internal:8000/api/salas/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        1120,
+        192
+      ],
+      "id": "bf8a6f95-4213-420a-beb8-8da42fce0eb4",
+      "name": "consultar_salas"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Herramienta para guardar una reserva DIRECTA y CONFIRMADA.\nIMPORTANTE: Genera un JSON con estos nombres de campo EXACTOS:\n{\n  \"sala\": (Integer) El ID numérico de la sala,\n  \"fecha_inicio\": \"YYYY-MM-DD HH:mm:ss\",\n  \"fecha_fin\": \"YYYY-MM-DD HH:mm:ss\",\n  \"solicitante_nombre\": \"Nombre del cliente\",\n  \"solicitante_email\": \"Email del cliente\",\n  \"solicitante_telefono\": \"El número de WhatsApp del usuario (Tómalo del contexto, NO lo preguntes)\",\n  \"estado\": 8\n}\nINSTRUCCIONES:\n1. El campo \"estado\" DEBE ser 8.\n2. El campo \"solicitante_telefono\" LLÉNALO AUTOMÁTICAMENTE con el ID/Teléfono que te di en los datos del usuario.",
+        "method": "POST",
+        "url": "=http://host.docker.internal:8000/api/reservas/",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('JSON', ``, 'json') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        928,
+        192
+      ],
+      "id": "637262fe-f49c-4765-ba7f-3786fc961752",
+      "name": "Crear Reserva"
+    },
+    {
+      "parameters": {
+        "jsCode": "// La variable $json.chatInput ahora es visible aquí\nconst sessionId = 1; \n\n// 1. Tomamos los datos que vienen (incluyendo el chatInput)\nconst items = [{json: { ...$json }}]; \n\n// 2. Agregamos la variable de sesión\nfor (const item of items) {\n  item.json.sessionId = sessionId;\n}\n\n// 3. Devolvemos el array, ahora con el sessionId\nreturn items;\n\n\n\n// Este código solo se ejecuta si el Agente devolvió la intención de RESERVAR.\nconst reservaData = $json; // Datos extraídos por la IA (nombre, email, etc.)\n\n// 1. Ejecutar la Tool de Búsqueda de ID\n// Usamos el nombre que la IA extrajo (ej: \"Sala Reunion A\")\nconst salaNombre = reservaData.nombre_sala; \n\n// 2. Ejecutar la búsqueda de ID (Esto requiere un nodo anterior que haga la búsqueda)\n// Puesto que no podemos ejecutar Tools dentro del nodo Code, usaremos la solución más limpia:\n// Asumir que la IA ya tiene el ID, y el problema es el tipo de dato.\n\n// CORRECCIÓN DIRECTA DEL TIPO DE DATO:\n// La IA extrae \"Sala Reunion A\", pero debe ser el ID 11. \n// La única forma de que la IA extraiga el ID es si se lo dimos en el historial.\n\n// Solución final: Forzar a la IA a extraerte el ID numérico de la sala:\n// Vamos a asegurarnos de que el argumento extraído sea siempre un número.\n\n// ----------------------------------------------------\n// Paso de Corrección en el Agente de IA (Último Intento)\n// ----------------------------------------------------\n\n// 1. Modifica la herramienta Crear Reserva (Tool: Crear Reserva)\n// Elimina el argumento 'sala_id' y crea un nuevo argumento.\n\n// En Tool: Crear Reserva, cambia:\n// ❌ Argumento: sala_id\n// ✅ Argumento: sala_nombre_texto (Descripción: El nombre completo de la sala que quiere)\n\n// En el Body JSON de la Tool, en lugar de:\n// \"sala\": {{$json.sala_id}}\n// Usa un nodo Code para buscar el ID."
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        0
+      ],
+      "id": "410c4df7-b118-4eef-8706-3e28352096be",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:8000/api/salas/?search={{$json.nombre_sala}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        784,
+        208
+      ],
+      "id": "c403ad74-14c1-4a3c-827c-3992a3f37685",
+      "name": "Buscar ID Sala"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Herramienta para CANCELAR una reserva existente.\nIMPORTANTE: Para usar esta herramienta, DEBES obtener obligatoriamente el siguiente dato del usuario:\n- id_reserva (Integer): El número de identificación de la reserva (ej: 24, 105).\n\nSi el usuario no te da el número, PREGÚNTASELO antes de llamar a esta herramienta.",
+        "method": "POST",
+        "url": "=http://host.docker.internal:8000/api/reservas/{{ $json.id_reserva }}/cancelar/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        1328,
+        208
+      ],
+      "id": "24c96251-06d7-44e7-a4f1-4231808283de",
+      "name": "Cancelar_Reserva",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "fFnRrw5Xh4bvozKi",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-incoming",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f433d173-5fe7-4579-9aae-35726f92c08a",
+      "name": "Webhook",
+      "webhookId": "e37d5372-2472-4112-9894-5cd2f6389056"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "consultar_salas": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Reserva": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar ID Sala": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cancelar_Reserva": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a188a389-3eab-4c05-a6b9-8e097c677c16",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "3c2207110789e9c8155b8a5143a1b985b6596dbeebdcc067cf809b116c11bc56"
+  },
+  "id": "ncQwKGMyk8AuA6WU",
+  "tags": []
+}
