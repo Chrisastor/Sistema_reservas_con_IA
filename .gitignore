@@ -1,0 +1,26 @@
+# --- SISTEMA ---
+.DS_Store
+Thumbs.db
+
+# --- PYTHON / DJANGO ---
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+db.sqlite3
+*.log
+
+# --- NODE / REACT ---
+node_modules/
+build/
+dist/
+.npm
+npm-debug.log*
+
+# --- VARIABLES DE ENTORNO (SECRETOS) ---
+.env
+.env.local
+
+# --- DOCKER ---
+.docker/
